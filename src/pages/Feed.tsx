@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { getParticipant } from '@/lib/participants';
 import { addFeedPost, deleteFeedPost, toggleReaction } from '@/lib/storage';
-import { db, ref, onValue, storage, sRef, uploadBytes, getDownloadURL } from '@/lib/firebase';
+import { db, ref, onValue } from '@/lib/firebase';
 import { timeAgo } from '@/lib/dateUtils';
 import { toast } from 'sonner';
 
@@ -19,6 +19,24 @@ interface GpxStats {
   duration: number;  // minutes
   elevGain: number;  // meters
   pace: string;      // "m:ss/km"
+}
+
+function compressImage(file: File, maxWidth = 900, quality = 0.7): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxWidth / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
 }
 
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -143,21 +161,7 @@ export default function Feed() {
       let imageUrl: string | undefined;
 
       if (file && file.type.startsWith('image/')) {
-        const path = `feed-media/${Date.now()}_${currentUser.id}`;
-        const uploadPromise = uploadBytes(sRef(storage, path), file).then(snap => getDownloadURL(snap.ref));
-        const timeout = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('STORAGE_TIMEOUT')), 15000)
-        );
-        try {
-          imageUrl = await Promise.race([uploadPromise, timeout]);
-        } catch (uploadErr: any) {
-          if (uploadErr?.message === 'STORAGE_TIMEOUT' || uploadErr?.code?.includes('storage')) {
-            toast.error('Ative o Firebase Storage no console para enviar fotos.', { duration: 4000 });
-            setUploading(false);
-            return;
-          }
-          throw uploadErr;
-        }
+        imageUrl = await compressImage(file);
       }
 
       addFeedPost({
