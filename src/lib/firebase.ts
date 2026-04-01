@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, onValue, set, push, remove, onDisconnect } from "firebase/database";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAxPcqHVUh6sa9LPKm54JKJZ7Yl-IE19y4",
@@ -13,4 +14,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
+export const storage = getStorage(app);
 export { ref, onValue, set, push, remove, onDisconnect };
+export { sRef, uploadBytes, getDownloadURL };

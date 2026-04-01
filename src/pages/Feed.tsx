@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { getParticipant } from '@/lib/participants';
 import { addFeedPost, deleteFeedPost, toggleReaction } from '@/lib/storage';
-import { db, ref, onValue } from '@/lib/firebase';
+import { db, ref, onValue, storage, sRef, uploadBytes, getDownloadURL } from '@/lib/firebase';
 import { timeAgo } from '@/lib/dateUtils';
 import { toast } from 'sonner';
 
@@ -14,15 +14,87 @@ const TAG_COLORS: Record<string, string> = {
   Água: '#06b6d4',
 };
 
+interface GpxStats {
+  distance: number;  // km
+  duration: number;  // minutes
+  elevGain: number;  // meters
+  pace: string;      // "m:ss/km"
+}
+
+function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function parseGPX(text: string): GpxStats | null {
+  try {
+    const doc = new DOMParser().parseFromString(text, 'application/xml');
+    const pts = Array.from(doc.querySelectorAll('trkpt'));
+    if (pts.length < 2) return null;
+
+    let dist = 0;
+    let elevGain = 0;
+    const times: Date[] = [];
+
+    for (let i = 1; i < pts.length; i++) {
+      const lat1 = parseFloat(pts[i - 1].getAttribute('lat') || '0');
+      const lon1 = parseFloat(pts[i - 1].getAttribute('lon') || '0');
+      const lat2 = parseFloat(pts[i].getAttribute('lat') || '0');
+      const lon2 = parseFloat(pts[i].getAttribute('lon') || '0');
+      dist += haversine(lat1, lon1, lat2, lon2);
+
+      const e1 = parseFloat(pts[i - 1].querySelector('ele')?.textContent || '0');
+      const e2 = parseFloat(pts[i].querySelector('ele')?.textContent || '0');
+      if (e2 > e1) elevGain += e2 - e1;
+    }
+
+    pts.forEach(pt => {
+      const t = pt.querySelector('time')?.textContent;
+      if (t) times.push(new Date(t));
+    });
+
+    const duration =
+      times.length >= 2
+        ? (times[times.length - 1].getTime() - times[0].getTime()) / 1000 / 60
+        : 0;
+
+    const pace = dist > 0 && duration > 0 ? duration / dist : 0;
+    const paceStr =
+      pace > 0
+        ? `${Math.floor(pace)}:${String(Math.round((pace % 1) * 60)).padStart(2, '0')}/km`
+        : '—';
+
+    return {
+      distance: Math.round(dist * 100) / 100,
+      duration: Math.round(duration),
+      elevGain: Math.round(elevGain),
+      pace: paceStr,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export default function Feed() {
   const { currentUser } = useUser();
   const [posts, setPosts] = useState<any[]>([]);
   const [msg, setMsg] = useState('');
   const [tag, setTag] = useState('Geral');
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [gpxStats, setGpxStats] = useState<GpxStats | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  // Subscrição em tempo real ao feed do Firebase
   useEffect(() => {
-    const unsub = onValue(ref(db, 'feed'), (snap) => {
+    const unsub = onValue(ref(db, 'feed'), snap => {
       const data = snap.val();
       if (!data) { setPosts([]); return; }
       const list = Object.entries(data)
@@ -35,11 +107,66 @@ export default function Feed() {
 
   if (!currentUser) return null;
 
-  const handlePost = () => {
-    if (!msg.trim()) return;
-    addFeedPost({ userId: currentUser.id, msg: msg.trim(), tag, ts: Date.now(), reactions: {} });
-    setMsg('');
-    toast.success('Post publicado!', { duration: 1500 });
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setFile(f);
+    setGpxStats(null);
+    setPreview(null);
+
+    if (f.name.endsWith('.gpx')) {
+      setTag('Corrida');
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const stats = parseGPX(ev.target?.result as string);
+        setGpxStats(stats);
+      };
+      reader.readAsText(f);
+    } else if (f.type.startsWith('image/')) {
+      const url = URL.createObjectURL(f);
+      setPreview(url);
+    }
+  };
+
+  const clearFile = () => {
+    setFile(null);
+    setPreview(null);
+    setGpxStats(null);
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
+  const handlePost = async () => {
+    if (!msg.trim() && !file) return;
+    setUploading(true);
+
+    try {
+      let imageUrl: string | undefined;
+
+      if (file && file.type.startsWith('image/')) {
+        const path = `feed-media/${Date.now()}_${currentUser.id}`;
+        const snap = await uploadBytes(sRef(storage, path), file);
+        imageUrl = await getDownloadURL(snap.ref);
+      }
+
+      await addFeedPost({
+        userId: currentUser.id,
+        msg: msg.trim(),
+        tag,
+        ts: Date.now(),
+        reactions: {},
+        ...(imageUrl ? { imageUrl } : {}),
+        ...(gpxStats ? { gpx: gpxStats } : {}),
+      });
+
+      setMsg('');
+      clearFile();
+      toast.success('Post publicado!', { duration: 1500 });
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao publicar. Tente novamente.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDelete = (postId: string) => {
@@ -52,6 +179,8 @@ export default function Feed() {
     const hasReacted = !!(post?.reactions?.[type]?.[currentUser.id]);
     toggleReaction(postId, type, currentUser.id, hasReacted);
   };
+
+  const canPost = (!!msg.trim() || !!file) && !uploading;
 
   return (
     <div className="pb-24 px-4 max-w-[680px] mx-auto">
@@ -66,6 +195,42 @@ export default function Feed() {
           className="w-full bg-transparent text-foreground text-sm resize-none outline-none placeholder:text-muted-foreground mb-3"
           rows={2}
         />
+
+        {/* Image preview */}
+        {preview && (
+          <div className="relative mb-3 rounded-lg overflow-hidden">
+            <img src={preview} alt="preview" className="max-h-48 w-full object-cover rounded-lg" />
+            <button
+              onClick={clearFile}
+              className="absolute top-1.5 right-1.5 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-black/80"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* GPX preview */}
+        {gpxStats && (
+          <div className="mb-3 rounded-lg p-3 flex items-center gap-3 text-sm" style={{ backgroundColor: '#3b82f620', border: '1px solid #3b82f640' }}>
+            <span className="text-xl">🏃</span>
+            <div className="flex gap-4 flex-wrap text-xs">
+              <span><strong>{gpxStats.distance} km</strong></span>
+              <span>{gpxStats.duration} min</span>
+              <span>⛰ {gpxStats.elevGain} m</span>
+              <span>⏱ {gpxStats.pace}</span>
+            </div>
+            <button onClick={clearFile} className="ml-auto text-muted-foreground hover:text-destructive text-xs">✕</button>
+          </div>
+        )}
+
+        {/* File attachment name (non-image, non-gpx) */}
+        {file && !preview && !gpxStats && (
+          <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <span>📎 {file.name}</span>
+            <button onClick={clearFile} className="hover:text-destructive">✕</button>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div className="flex gap-1.5 flex-wrap">
             {TAGS.map(t => (
@@ -83,13 +248,30 @@ export default function Feed() {
               </button>
             ))}
           </div>
-          <button
-            onClick={handlePost}
-            disabled={!msg.trim()}
-            className="px-4 py-1.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-40 transition-opacity ml-2 shrink-0"
-          >
-            Postar
-          </button>
+          <div className="flex items-center gap-2 ml-2 shrink-0">
+            {/* Attach button */}
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="text-muted-foreground hover:text-foreground transition-colors text-lg"
+              title="Foto ou arquivo GPX (Strava)"
+            >
+              📎
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*,.gpx"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <button
+              onClick={handlePost}
+              disabled={!canPost}
+              className="px-4 py-1.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-40 transition-opacity"
+            >
+              {uploading ? '...' : 'Postar'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -123,7 +305,39 @@ export default function Feed() {
                       {post.tag}
                     </span>
                   </div>
-                  <p className="text-sm text-secondary-foreground mb-2 whitespace-pre-wrap">{post.msg}</p>
+                  {post.msg && (
+                    <p className="text-sm text-secondary-foreground mb-2 whitespace-pre-wrap">{post.msg}</p>
+                  )}
+
+                  {/* Image attachment */}
+                  {post.imageUrl && (
+                    <div className="mb-2 rounded-lg overflow-hidden">
+                      <img
+                        src={post.imageUrl}
+                        alt="foto"
+                        className="w-full max-h-72 object-cover rounded-lg cursor-pointer"
+                        onClick={() => window.open(post.imageUrl, '_blank')}
+                      />
+                    </div>
+                  )}
+
+                  {/* GPX stats card */}
+                  {post.gpx && (
+                    <div className="mb-2 rounded-lg p-3 flex items-center gap-3" style={{ backgroundColor: '#3b82f615', border: '1px solid #3b82f630' }}>
+                      <span className="text-2xl">🏃</span>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs">
+                        <span className="text-muted-foreground">Distância</span>
+                        <span className="font-semibold text-foreground">{post.gpx.distance} km</span>
+                        <span className="text-muted-foreground">Duração</span>
+                        <span className="font-semibold text-foreground">{post.gpx.duration} min</span>
+                        <span className="text-muted-foreground">Elevação</span>
+                        <span className="font-semibold text-foreground">{post.gpx.elevGain} m</span>
+                        <span className="text-muted-foreground">Pace</span>
+                        <span className="font-semibold text-foreground">{post.gpx.pace}</span>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => handleReaction(post.id, 'fire')}
