@@ -129,12 +129,11 @@ body{min-height:100vh;background:var(--bg);color:var(--t);font-family:'Inter',sy
 .yn-b.ya{background:var(--gbg);border-color:var(--g);color:var(--g)}
 .yn-b.na{background:var(--obg);border-color:var(--o);color:var(--o)}
 .slw{margin-top:6px}
-.sl-v{font-size:21px;font-weight:800;margin-bottom:6px;letter-spacing:-.5px}
-input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--bor);outline:none;cursor:pointer}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;cursor:pointer;box-shadow:0 0 0 3px rgba(0,0,0,.4)}
-input[type=range].rg::-webkit-slider-thumb{background:var(--g)}
-input[type=range].rb::-webkit-slider-thumb{background:var(--b)}
-input[type=range].ro::-webkit-slider-thumb{background:var(--o)}
+.sl-v{font-size:21px;font-weight:800;margin-bottom:8px;letter-spacing:-.5px}
+.sl-btns{display:flex;gap:6px;justify-content:center}
+.sl-b{flex:1;padding:9px 0;border:1.5px solid var(--bor);border-radius:10px;background:none;color:var(--t);font-size:20px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .12s;line-height:1}
+.sl-b:hover{border-color:var(--g);color:var(--g);background:var(--gbg)}
+.sl-b:active{transform:scale(.94)}
 
 /* ── WEEK BARS ── */
 .wkbar-wrap{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r2);padding:18px}
@@ -584,9 +583,9 @@ function renderDesafio(){
       ctrl=`<div class="yn"><button class="yn-b ${done?'ya':''}" onclick="chYN('${ch.id}','S')">Sim</button><button class="yn-b ${fail?'na':''}" onclick="chYN('${ch.id}','N')">Não</button></div>`;
     }else{
       const num=parseFloat(v||0);
-      ctrl=`<div class="slw"><div class="sl-v" id="sv${ci}">${num.toFixed(1)} ${ch.unit}</div><input type="range" class="${ch.rc}" min="${ch.min}" max="${ch.max}" step="${ch.step}" value="${num}" oninput="chSl('${ch.id}',${ci},this,'${ch.unit}',${ch.goal})"></div>`;
+      ctrl=`<div class="slw"><div class="sl-v" id="sv${ci}">${num.toFixed(1)} ${ch.unit}</div><div class="sl-btns"><button class="sl-b" onclick="chStep('${ch.id}',${ci},-${ch.step},${ch.step},${ch.min},${ch.max},'${ch.unit}',${ch.goal})">−</button><button class="sl-b" onclick="chStep('${ch.id}',${ci},${ch.step},${ch.step},${ch.min},${ch.max},'${ch.unit}',${ch.goal})">+</button></div></div>`;
     }
-    html+=`<div class="ch-card ${done?'done':fail?'fail':''}"><span class="ch-icon">${ch.icon}</span><div class="ch-title">${ch.title}</div><div class="ch-streak">${cst}</div><div class="ch-sl-lbl">dias seguidos</div><div class="badge ${done?'ok':fail?'no':'pd'}">${done?'Feito':fail?'Não feito':'Pendente'}</div>${ctrl}</div>`;
+    html+=`<div class="ch-card ${done?'done':fail?'fail':''}" id="chcard${ci}"><span class="ch-icon">${ch.icon}</span><div class="ch-title">${ch.title}</div><div class="ch-streak">${cst}</div><div class="ch-sl-lbl">dias seguidos</div><div class="badge ${done?'ok':fail?'no':'pd'}">${done?'Feito':fail?'Não feito':'Pendente'}</div>${ctrl}</div>`;
   });
   document.getElementById('ch-grid').innerHTML=html;
   let wb='';
@@ -597,12 +596,15 @@ function renderDesafio(){
   });
   document.getElementById('wkbars').innerHTML=wb;
 }
-function chYN(id,val){mySet(`ch_${currentDay}_${id}`,val);toast(val==='S'?'✓ Marcado!':'Registrado');}
-function chSl(id,ci,el,unit,goal){
-  const v=parseFloat(el.value).toFixed(1);
-  mySet(`ch_${currentDay}_${id}`,v);
-  document.getElementById('sv'+ci).textContent=v+' '+unit;
-  if(parseFloat(v)>=goal)toast('🎯 Meta atingida!');
+function chYN(id,val){mySet(`ch_${currentDay}_${id}`,val);renderDesafio();}
+function chStep(id,ci,delta,step,min,max,unit,goal){
+  const cur=parseFloat(rget(ME,`ch_${currentDay}_${id}`)||0);
+  const nv=Math.max(min,Math.min(max,Math.round((cur+delta)*10)/10));
+  mySet(`ch_${currentDay}_${id}`,nv.toFixed(1));
+  document.getElementById('sv'+ci).textContent=nv.toFixed(1)+' '+unit;
+  const card=document.getElementById('chcard'+ci);
+  if(card){const done=nv>=goal,prev=rget(ME,`ch_${currentDay}_${id}`);card.className='ch-card'+(done?' done':'');}
+  renderDesafio();
 }
 
 // ═══════════════════════════════════════════════════════
