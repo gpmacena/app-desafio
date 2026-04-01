@@ -384,8 +384,17 @@ let db=null;
 let cfg={};
 let firebaseReady=false;
 
+const DEFAULT_CFG={
+  apiKey:"AIzaSyAxPcqHVUh6sa9LPKm54JKJZ7Yl-IE19y4",
+  authDomain:"desafio-a07f8.firebaseapp.com",
+  dbUrl:"https://desafio-a07f8-default-rtdb.firebaseio.com",
+  projId:"desafio-a07f8",
+  nameA:"Gabriel",
+  nameB:"Debora"
+};
 function loadCfg(){
   try{cfg=JSON.parse(localStorage.getItem('fitcfg'))||{};}catch(e){cfg={};}
+  if(!cfg.apiKey||!cfg.dbUrl){cfg={...DEFAULT_CFG,...cfg};saveCfg();}
 }
 function saveCfg(){localStorage.setItem('fitcfg',JSON.stringify(cfg));}
 
