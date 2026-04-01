@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitChallenge</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0D0F14;--sur:#161921;--sur2:#1E2230;--bor:#2A2F3F;
+  --g:#00E5A0;--g2:#00C484;--gbg:rgba(0,229,160,.09);
+  --b:#4D9EFF;--bbg:rgba(77,158,255,.09);
+  --o:#FF6B35;--obg:rgba(255,107,53,.09);
+  --p:#FF4FA3;
+  --t:#F0F2F7;--t2:#8891A8;--t3:#4A5168;
+  --r:12px;--r2:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100vh;background:var(--bg);color:var(--t);font-family:'Space Grotesk',sans-serif;overflow-x:hidden}
+
+/* ── SCREENS ── */
+.screen{display:none;min-height:100vh}
+.screen.show{display:flex}
+
+/* ── SETUP ── */
+#s-setup{flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:24px;text-align:center}
+.logo{font-family:'Syne',sans-serif;font-size:clamp(38px,7vw,68px);font-weight:800;line-height:1}
+.logo span{color:var(--g)}
+.setup-card{background:var(--sur);border:1.5px solid var(--bor);border-radius:var(--r2);padding:28px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:16px}
+.setup-card h2{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em}
+.inp{background:var(--sur2);border:1.5px solid var(--bor);border-radius:10px;color:var(--t);font-size:14px;padding:11px 14px;font-family:inherit;width:100%;transition:border-color .2s;outline:none}
+.inp:focus{border-color:var(--g)}
+.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.inp-lbl{font-size:12px;color:var(--t2);font-weight:600;margin-bottom:4px}
+.btn-main{background:var(--g);color:#000;font-size:15px;font-weight:700;padding:14px;border-radius:10px;border:none;cursor:pointer;font-family:inherit;transition:all .15s;width:100%}
+.btn-main:hover{background:var(--g2);transform:translateY(-1px)}
+.btn-main:active{transform:scale(.98)}
+.config-hint{font-size:12px;color:var(--t3);line-height:1.6}
+.config-hint a{color:var(--b);text-decoration:none}
+
+/* ── LOGIN ── */
+#s-login{flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:24px}
+.login-title{font-family:'Syne',sans-serif;font-size:clamp(32px,5vw,52px);font-weight:800;text-align:center}
+.login-title span{color:var(--g)}
+.login-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:460px}
+.login-card{background:var(--sur);border:1.5px solid var(--bor);border-radius:var(--r2);padding:28px 20px;cursor:pointer;text-align:center;transition:all .2s;position:relative;overflow:hidden}
+.login-card:hover{transform:translateY(-3px)}
+.login-card.ua:hover{border-color:var(--g)}
+.login-card.ub:hover{border-color:var(--b)}
+.lc-glow{position:absolute;inset:0;opacity:0;transition:.3s;pointer-events:none}
+.login-card:hover .lc-glow{opacity:1}
+.lc-av{width:68px;height:68px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;font-family:'Syne',sans-serif}
+.lc-name{font-size:19px;font-weight:700;margin-bottom:4px}
+.lc-sub{color:var(--t2);font-size:12px}
+.lc-water{margin-top:10px;font-size:12px;font-weight:600}
+.btn-setup{font-size:12px;color:var(--t3);cursor:pointer;padding:6px 14px;border:1px solid var(--bor);border-radius:20px;background:none;font-family:inherit;transition:all .2s}
+.btn-setup:hover{color:var(--t2);border-color:var(--t2)}
+
+/* ── APP TOPBAR ── */
+#s-app{flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--bor);background:rgba(13,15,20,.96);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
+.tb-logo{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--g)}
+.tb-right{display:flex;align-items:center;gap:10px}
+.tb-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;font-family:'Syne',sans-serif}
+.tb-name{font-size:14px;font-weight:600}
+.tb-online{width:7px;height:7px;border-radius:50%;background:#888;margin-right:-4px;margin-top:-12px;align-self:flex-start}
+.tb-online.on{background:var(--g);box-shadow:0 0 6px var(--g)}
+.btn-sm{padding:6px 12px;border:1px solid var(--bor);border-radius:20px;background:none;color:var(--t2);font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn-sm:hover{border-color:var(--g);color:var(--g)}
+
+/* ── NAV ── */
+.nav{display:flex;gap:2px;padding:10px 20px;border-bottom:1px solid var(--bor);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav-btn{padding:8px 15px;border:none;background:none;color:var(--t2);font-size:13px;font-weight:600;cursor:pointer;border-radius:8px;white-space:nowrap;font-family:inherit;transition:all .15s}
+.nav-btn.on{background:var(--gbg);color:var(--g)}
+.nav-btn:hover:not(.on){background:var(--sur2)}
+
+/* ── PAGE ── */
+.page{display:none;padding:20px;max-width:920px;margin:0 auto;width:100%}
+.page.on{display:block}
+.pg-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:4px}
+.pg-sub{color:var(--t2);font-size:13px;margin-bottom:20px}
+
+/* ── STATS ROW ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:20px}
+.stat{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:14px;text-align:center}
+.stat-v{font-size:24px;font-weight:700;font-family:'Syne',sans-serif;color:var(--g)}
+.stat-l{font-size:11px;color:var(--t2);margin-top:3px;font-weight:500}
+
+/* ── DAY NAV ── */
+.dnav{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.dnav-lbl{font-size:15px;font-weight:700;flex:1}
+.dnav-arr{width:34px;height:34px;border:1px solid var(--bor);border-radius:8px;background:none;color:var(--t2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit}
+.dnav-arr:hover{border-color:var(--g);color:var(--g)}
+.dnav-today{padding:6px 14px;border:1px solid var(--g);border-radius:8px;background:var(--gbg);color:var(--g);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+
+/* ── CHALLENGE CARDS ── */
+.ch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:22px}
+.ch-card{background:var(--sur);border:1.5px solid var(--bor);border-radius:var(--r2);padding:18px 14px;text-align:center;transition:border-color .2s,background .2s;position:relative}
+.ch-card.done{border-color:var(--g);background:var(--gbg)}
+.ch-card.fail{border-color:var(--o);background:var(--obg)}
+.ch-icon{font-size:26px;margin-bottom:9px}
+.ch-title{font-size:12px;font-weight:600;margin-bottom:5px;line-height:1.3}
+.ch-streak{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--g);line-height:1}
+.ch-sl{font-size:10px;color:var(--t2);margin-bottom:8px}
+.badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:9px}
+.badge.ok{background:var(--gbg);color:var(--g)}
+.badge.no{background:var(--obg);color:var(--o)}
+.badge.pd{background:var(--sur2);color:var(--t2)}
+.yn{display:flex;gap:5px;justify-content:center}
+.yn-b{flex:1;padding:7px 0;border:1.5px solid var(--bor);border-radius:8px;background:none;color:var(--t2);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.yn-b.ya{background:var(--gbg);border-color:var(--g);color:var(--g)}
+.yn-b.na{background:var(--obg);border-color:var(--o);color:var(--o)}
+.slw{margin-top:8px}
+.sl-v{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:5px}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--bor);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;cursor:pointer;box-shadow:0 0 0 3px rgba(0,0,0,.3)}
+input[type=range].rg{--tc:var(--g)}
+input[type=range].rb{--tc:var(--b)}
+input[type=range].ro{--tc:var(--o)}
+input[type=range]::-webkit-slider-thumb{background:var(--tc,var(--g))}
+
+/* ── WEEK BARS ── */
+.wkbar-wrap{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r2);padding:16px}
+.wkbar-title{font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.wkbar-rows{display:flex;flex-direction:column;gap:7px}
+.wkbar-row{display:grid;grid-template-columns:72px 1fr 34px;align-items:center;gap:8px}
+.wkbar-lbl{font-size:12px;color:var(--t2);font-weight:500}
+.wkbar-bg{background:var(--bor);border-radius:4px;height:8px;overflow:hidden}
+.wkbar-fill{height:8px;border-radius:4px;transition:width .5s}
+.wkbar-sc{font-size:12px;font-weight:600;color:var(--t2);text-align:right}
+
+/* ── VERSUS ── */
+.h2h{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r2);padding:18px;margin-bottom:12px}
+.h2h-label{font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+.h2h-cols{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
+.h2h-side{display:flex;flex-direction:column}
+.h2h-side.right{align-items:flex-end;text-align:right}
+.h2h-n{font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.h2h-v{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;line-height:1}
+.h2h-bar{background:var(--bor);border-radius:4px;height:8px;overflow:hidden;position:relative;margin-top:6px}
+.h2h-fill-a{position:absolute;left:0;top:0;height:100%;border-radius:4px;transition:width .5s}
+.h2h-fill-b{position:absolute;right:0;top:0;height:100%;border-radius:4px;transition:width .5s}
+.h2h-vs{font-size:12px;font-weight:800;color:var(--t3)}
+.leader{font-size:10px;padding:2px 7px;border-radius:12px;background:rgba(0,229,160,.15);color:var(--g);font-weight:700}
+.other-score{background:var(--sur2);border:1px solid var(--bor);border-radius:var(--r);padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.os-label{font-size:12px;color:var(--t2)}
+.os-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:800}
+.online-dot{width:8px;height:8px;border-radius:50%;background:#888;flex-shrink:0}
+.online-dot.on{background:var(--g);box-shadow:0 0 5px var(--g)}
+
+/* ── TREINO FORM ── */
+.sec-hdr{background:rgba(31,78,121,.5);color:#90C4E8;font-size:11px;font-weight:700;padding:9px 16px;letter-spacing:.06em;text-transform:uppercase;border-radius:8px 8px 0 0;margin-top:8px}
+.sec-body{background:var(--sur);border:1px solid var(--bor);border-radius:0 0 8px 8px;margin-bottom:4px;overflow:hidden}
+.field-row{display:grid;grid-template-columns:180px 1fr;border-bottom:1px solid rgba(42,47,63,.4)}
+.field-row:last-child{border-bottom:none}
+.field-lbl{padding:12px 16px;font-size:13px;color:var(--t2);font-weight:500;background:rgba(30,34,48,.5);display:flex;align-items:center}
+.field-ctrl{padding:4px 0}
+.f-inp{background:none;border:none;color:var(--t);font-size:13px;font-family:inherit;outline:none;padding:12px 16px;width:100%}
+.f-ta{background:none;border:none;color:var(--t);font-size:13px;font-family:inherit;resize:none;outline:none;padding:12px 16px;width:100%}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--bor)}
+table{border-collapse:collapse;width:100%;min-width:580px}
+th{background:var(--sur2);color:var(--t2);font-size:11px;font-weight:600;padding:10px 12px;text-align:left;border-bottom:1px solid var(--bor);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid rgba(42,47,63,.4);font-size:13px;color:var(--t);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr.tr-today td{background:rgba(0,229,160,.04)}
+.t-inp{background:none;border:none;color:var(--t);font-size:13px;font-family:inherit;outline:none;width:70px;text-align:center}
+.t-inp:focus{background:var(--sur2);border-radius:4px;padding:2px 4px}
+.fase-badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700}
+.f1{background:rgba(77,158,255,.15);color:var(--b)}
+.f2{background:rgba(0,229,160,.15);color:var(--g)}
+.f3{background:rgba(255,165,0,.15);color:#FFA500}
+.f4{background:rgba(255,79,163,.15);color:var(--p)}
+
+/* ── PESO ── */
+.peso-tbl{border-collapse:collapse;width:100%;border-radius:var(--r);overflow:hidden;border:1px solid var(--bor)}
+.peso-tbl th{background:var(--sur2);color:var(--t2);font-size:11px;font-weight:600;padding:10px 12px;text-align:center;border:1px solid var(--bor);text-transform:uppercase;letter-spacing:.05em}
+.peso-tbl td{padding:8px 10px;border:1px solid rgba(42,47,63,.4);text-align:center;font-size:13px}
+.p-inp{background:none;border:none;color:var(--t);font-size:13px;font-family:inherit;text-align:center;outline:none;width:75px}
+.p-inp:focus{background:var(--sur2);border-radius:4px}
+.diff-up{color:var(--o);font-weight:700}
+.diff-dn{color:var(--g);font-weight:700}
+
+/* ── CALENDAR ── */
+.cal-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:580px){.cal-grid-2{grid-template-columns:1fr}}
+.cal-month-lbl{font-size:12px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.cal-wd-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px}
+.cal-wd{font-size:9px;color:var(--t3);text-align:center;font-weight:600}
+.cal-cells{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-c{aspect-ratio:1;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px}
+.cal-c .cn{font-size:11px;font-weight:600;line-height:1}
+.cal-c .cs{font-size:9px;margin-top:1px}
+.cal-legend{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2)}
+.leg-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+
+/* ── LOADING ── */
+#s-loading{flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.spinner{width:40px;height:40px;border:3px solid var(--bor);border-top-color:var(--g);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{color:var(--t2);font-size:14px}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--g);color:#000;font-weight:700;font-size:14px;padding:11px 22px;border-radius:30px;z-index:999;transition:transform .25s;pointer-events:none;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:520px){
+  .ch-grid{grid-template-columns:1fr 1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  .login-grid{grid-template-columns:1fr}
+  .field-row{grid-template-columns:1fr}
+  .field-lbl{border-bottom:1px solid rgba(42,47,63,.4)}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="s-loading" class="screen show">
+  <div class="spinner"></div>
+  <div class="loading-txt">Conectando...</div>
+</div>
+
+<!-- SETUP (first time) -->
+<div id="s-setup" class="screen">
+  <div><div class="logo">Fit<span>Challenge</span></div>
+  <div style="color:var(--t2);font-size:15px;margin-top:6px">Configure o app pela primeira vez</div></div>
+  <div class="setup-card">
+    <h2>Nome dos participantes</h2>
+    <div class="inp-row">
+      <div><div class="inp-lbl">Seu nome</div><input class="inp" id="setup-na" placeholder="ex: João"></div>
+      <div><div class="inp-lbl">Nome dela</div><input class="inp" id="setup-nb" placeholder="ex: Maria"></div>
+    </div>
+    <h2 style="margin-top:8px">Firebase — banco de dados</h2>
+    <div class="config-hint">Crie um projeto gratuito em <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> e cole os dados abaixo. Veja o README.md para o passo a passo completo.</div>
+    <div><div class="inp-lbl">API Key</div><input class="inp" id="fb-api" placeholder="AIzaSy..."></div>
+    <div><div class="inp-lbl">Auth Domain</div><input class="inp" id="fb-auth" placeholder="seu-projeto.firebaseapp.com"></div>
+    <div><div class="inp-lbl">Database URL</div><input class="inp" id="fb-db" placeholder="https://seu-projeto-default-rtdb.firebaseio.com"></div>
+    <div><div class="inp-lbl">Project ID</div><input class="inp" id="fb-proj" placeholder="seu-projeto"></div>
+    <button class="btn-main" onclick="saveSetup()">Salvar e continuar</button>
+    <div class="config-hint" style="text-align:center">Os dados ficam no Firebase — vocês dois acessam em tempo real de qualquer dispositivo.</div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="s-login" class="screen">
+  <div class="login-title">Quem está<br><span>treinando?</span></div>
+  <div class="login-grid">
+    <div class="login-card ua" onclick="login('a')">
+      <div class="lc-glow" style="background:radial-gradient(circle at 50% 100%,rgba(0,229,160,.14),transparent 70%)"></div>
+      <div class="lc-av" style="background:rgba(0,229,160,.13);color:var(--g)" id="av-a">J</div>
+      <div class="lc-name" id="ln-a">Eu</div>
+      <div class="lc-sub">Academia + Corrida</div>
+      <div class="lc-water" style="color:var(--g)">Meta água: 3L/dia</div>
+    </div>
+    <div class="login-card ub" onclick="login('b')">
+      <div class="lc-glow" style="background:radial-gradient(circle at 50% 100%,rgba(77,158,255,.14),transparent 70%)"></div>
+      <div class="lc-av" style="background:rgba(77,158,255,.13);color:var(--b)" id="av-b">M</div>
+      <div class="lc-name" id="ln-b">Esposa</div>
+      <div class="lc-sub">Hidratação + Passos</div>
+      <div class="lc-water" style="color:var(--b)">Meta água: 2L/dia</div>
+    </div>
+  </div>
+  <button class="btn-setup" onclick="goSetup()">Reconfigurar</button>
+</div>
+
+<!-- APP -->
+<div id="s-app" class="screen">
+  <div class="topbar">
+    <div class="tb-logo">FitChallenge</div>
+    <div class="tb-right">
+      <div class="online-dot" id="other-dot" title=""></div>
+      <div class="tb-av" id="tb-av"></div>
+      <span class="tb-name" id="tb-name"></span>
+      <button class="btn-sm" onclick="goLogin()">Trocar</button>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nav-btn on" onclick="goPage('desafio',this)">Desafio</button>
+    <button class="nav-btn" onclick="goPage('versus',this)">Versus</button>
+    <button class="nav-btn" onclick="goPage('treino',this)">Diário</button>
+    <button class="nav-btn" onclick="goPage('corrida',this)">Corrida</button>
+    <button class="nav-btn" onclick="goPage('peso',this)">Peso</button>
+    <button class="nav-btn" onclick="goPage('cal',this)">Calendário</button>
+  </div>
+
+  <div class="page on" id="page-desafio">
+    <div class="dnav">
+      <button class="dnav-arr" onclick="navDay(-1)">&#8592;</button>
+      <div class="dnav-lbl" id="dnav-lbl"></div>
+      <button class="dnav-arr" onclick="navDay(1)">&#8594;</button>
+      <button class="dnav-today" onclick="navDay(0)">Hoje</button>
+    </div>
+    <div class="stats" id="d-stats"></div>
+    <div class="ch-grid" id="ch-grid"></div>
+    <div class="wkbar-wrap">
+      <div class="wkbar-title">Semana atual</div>
+      <div class="wkbar-rows" id="wkbars"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-versus">
+    <div class="pg-title">Versus</div>
+    <div class="pg-sub" id="vs-sub"></div>
+    <div id="vs-content"></div>
+  </div>
+
+  <div class="page" id="page-treino">
+    <div class="dnav">
+      <button class="dnav-arr" onclick="navTr(-1)">&#8592;</button>
+      <div class="dnav-lbl" id="tr-lbl"></div>
+      <button class="dnav-arr" onclick="navTr(1)">&#8594;</button>
+      <button class="dnav-today" onclick="navTr(0)">Hoje</button>
+    </div>
+    <div id="tr-form"></div>
+  </div>
+
+  <div class="page" id="page-corrida">
+    <div class="pg-title">Corrida — 8 semanas</div>
+    <div class="pg-sub">Protocolo progressivo começando em 01/04</div>
+    <div class="stats" id="cor-stats"></div>
+    <div class="tbl-wrap">
+      <table><thead><tr>
+        <th>Data</th><th>Dia</th><th>Fase</th><th>Protocolo</th><th>Feito?</th><th>Min</th><th>Km</th><th>FC</th><th>Sensação</th>
+      </tr></thead><tbody id="cor-body"></tbody></table>
+    </div>
+  </div>
+
+  <div class="page" id="page-peso">
+    <div class="pg-title">Peso & Medidas</div>
+    <div class="pg-sub">Pesagem semanal — em jejum, mesmo horário</div>
+    <div style="overflow-x:auto">
+      <table class="peso-tbl"><thead><tr>
+        <th>Data</th><th>Peso (kg)</th><th>Cintura</th><th>Quadril</th><th>Braço</th><th>Coxa</th><th>Variação</th><th>Obs</th>
+      </tr></thead><tbody id="peso-body"></tbody></table>
+    </div>
+  </div>
+
+  <div class="page" id="page-cal">
+    <div class="pg-title">Calendário</div>
+    <div class="pg-sub">Heatmap de aderência — seus desafios diários</div>
+    <div class="cal-grid-2" id="cal-content"></div>
+    <div class="cal-legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--g)"></div>Todos os desafios</div>
+      <div class="leg"><div class="leg-dot" style="background:rgba(0,196,132,.3)"></div>Parcial</div>
+      <div class="leg"><div class="leg-dot" style="background:rgba(255,107,53,.25)"></div>Nenhum</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--bor)"></div>Futuro</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════
+const TODAY = '01/04';
+const ALL_DAYS = (()=>{
+  const days=[];
+  for(let i=0;i<90;i++){
+    const d=new Date(2025,3,1); d.setDate(d.getDate()+i);
+    days.push(`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`);
+  }
+  return days;
+})();
+const WD=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const TR_MAP={'Qua':'Lombar+Core+Corrida','Qui':'Lombar+Corrida','Sex':'Pernas','Sáb':'Corrida principal','Dom':'Descanso ativo','Seg':'Peito+Tríceps','Ter':'Costas+Bíceps'};
+function getWD(s){const[d,m]=s.split('/').map(Number);return new Date(2025,m-1,d).getDay();}
+function wdl(s){return WD[getWD(s)];}
+
+// ═══════════════════════════════════════════════════════
+// CONFIG / FIREBASE
+// ═══════════════════════════════════════════════════════
+let db=null;
+let cfg={};
+let firebaseReady=false;
+
+function loadCfg(){
+  try{cfg=JSON.parse(localStorage.getItem('fitcfg'))||{};}catch(e){cfg={};}
+}
+function saveCfg(){localStorage.setItem('fitcfg',JSON.stringify(cfg));}
+
+function initFirebase(){
+  if(!cfg.apiKey||!cfg.dbUrl){return false;}
+  try{
+    if(firebase.apps.length===0){
+      firebase.initializeApp({
+        apiKey:cfg.apiKey, authDomain:cfg.authDomain,
+        databaseURL:cfg.dbUrl, projectId:cfg.projId
+      });
+    }
+    db=firebase.database();
+    firebaseReady=true;
+    return true;
+  }catch(e){console.error(e);return false;}
+}
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let ME=null, OTHER=null;
+let currentDay=TODAY, trDay=TODAY;
+let remoteData={a:{},b:{}};
+let listeners={};
+
+function rget(u,k,def=''){
+  const v=remoteData[u]?remoteData[u][k]:undefined;
+  return v!==undefined?v:def;
+}
+function rset(u,k,v){
+  if(!firebaseReady){toast('Firebase não configurado');return;}
+  if(!remoteData[u])remoteData[u]={};
+  remoteData[u][k]=v;
+  db.ref(`data/${u}/${k}`).set(v);
+}
+function mySet(k,v){rset(ME,k,v);}
+function myGet(k,def=''){return rget(ME,k,def);}
+function otherGet(k,def=''){return OTHER?rget(OTHER,k,def):def;}
+
+// Subscribe to both users' data
+function subscribe(){
+  if(!firebaseReady) return;
+  ['a','b'].forEach(u=>{
+    if(listeners[u]) db.ref(`data/${u}`).off('value',listeners[u]);
+    listeners[u]=db.ref(`data/${u}`).on('value',snap=>{
+      remoteData[u]=snap.val()||{};
+      if(ME) refreshCurrentPage();
+    });
+  });
+  // Presence
+  setPresence();
+}
+
+function setPresence(){
+  if(!firebaseReady||!ME) return;
+  const ref=db.ref(`presence/${ME}`);
+  ref.set(true);
+  ref.onDisconnect().remove();
+  db.ref(`presence/${OTHER}`).on('value',snap=>{
+    const on=snap.val()===true;
+    const dot=document.getElementById('other-dot');
+    if(dot){dot.className='online-dot'+(on?' on':'');dot.title=on?`${getName(OTHER)} está online`:`${getName(OTHER)} offline`;}
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// CHALLENGES
+// ═══════════════════════════════════════════════════════
+function getChs(u){
+  const wg=u==='a'?3:2;
+  return [
+    {id:'fastfood',icon:'🍔',title:'Zero fast food',  type:'yn',goal:1},
+    {id:'agua',    icon:'💧',title:`${wg}L de água`,   type:'sl',goal:wg,min:0,max:5,step:.1,unit:'L',rc:'rb'},
+    {id:'corrida', icon:'🏃',title:'Sessão de corrida',type:'yn',goal:1},
+    {id:'academia',icon:'🏋️',title:'Academia',         type:'yn',goal:1},
+    {id:'passos',  icon:'👟',title:'10k passos',       type:'sl',goal:10,min:0,max:25,step:.5,unit:'k',rc:'ro'},
+  ];
+}
+function isDone(u,d,ch){
+  const v=rget(u,`ch_${d}_${ch.id}`);
+  if(ch.type==='yn') return v==='S';
+  return parseFloat(v||0)>=ch.goal;
+}
+function isFail(u,d,ch){
+  const v=rget(u,`ch_${d}_${ch.id}`);
+  if(ch.type==='yn') return v==='N';
+  return v!==''&&v!==undefined&&parseFloat(v||0)<ch.goal;
+}
+function score(u,d){return getChs(u).filter(ch=>isDone(u,d,ch)).length;}
+function maxScore(u){return getChs(u).length;}
+function streak(u,upTo){
+  let s=0; const idx=ALL_DAYS.indexOf(upTo), ms=maxScore(u);
+  for(let i=idx;i>=0;i--){if(score(u,ALL_DAYS[i])===ms)s++;else break;}
+  return s;
+}
+function bestStreak(u){
+  let best=0,cur=0; const ms=maxScore(u), ti=ALL_DAYS.indexOf(TODAY);
+  for(let i=0;i<=ti;i++){score(u,ALL_DAYS[i])===ms?best=Math.max(best,++cur):cur=0;}
+  return best;
+}
+function chStreak(u,ch,d){
+  let s=0; const idx=ALL_DAYS.indexOf(d);
+  for(let i=idx;i>=0;i--){if(isDone(u,ALL_DAYS[i],ch))s++;else break;}
+  return s;
+}
+function weekDays(d){
+  const idx=ALL_DAYS.indexOf(d), wd=getWD(d), dfw=wd>=3?wd-3:wd+4;
+  return ALL_DAYS.slice(Math.max(0,idx-dfw),Math.min(ALL_DAYS.length,Math.max(0,idx-dfw)+7));
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+let currentPage='desafio';
+function goPage(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('page-'+name).classList.add('on');
+  btn.classList.add('on');
+  currentPage=name;
+  renderPage(name);
+}
+function refreshCurrentPage(){renderPage(currentPage);}
+function renderPage(name){
+  if(name==='desafio') renderDesafio();
+  else if(name==='versus') renderVersus();
+  else if(name==='treino') renderTreino();
+  else if(name==='corrida') renderCorrida();
+  else if(name==='peso') renderPeso();
+  else if(name==='cal') renderCal();
+}
+function navDay(dir){
+  if(dir===0)currentDay=TODAY;
+  else{const i=ALL_DAYS.indexOf(currentDay);const ni=i+dir;if(ni>=0&&ni<ALL_DAYS.length)currentDay=ALL_DAYS[ni];}
+  renderDesafio();
+}
+function navTr(dir){
+  if(dir===0)trDay=TODAY;
+  else{const i=ALL_DAYS.indexOf(trDay);const ni=i+dir;if(ni>=0&&ni<28)trDay=ALL_DAYS[ni];}
+  renderTreino();
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER — DESAFIO
+// ═══════════════════════════════════════════════════════
+function renderDesafio(){
+  const u=ME,d=currentDay;
+  const ti=ALL_DAYS.indexOf(TODAY),di=ALL_DAYS.indexOf(d);
+  document.getElementById('dnav-lbl').textContent=`${wdl(d)}, ${d}${d===TODAY?' — Hoje':''}`;
+
+  const str=streak(u,TODAY), bst=bestStreak(u);
+  const wk=weekDays(d);
+  const chs=getChs(u);
+  const corrSem=wk.filter(dd=>isDone(u,dd,chs[2])).length;
+  const acaSem=wk.filter(dd=>isDone(u,dd,chs[3])).length;
+  document.getElementById('d-stats').innerHTML=`
+    <div class="stat"><div class="stat-v">${str}</div><div class="stat-l">Streak atual</div></div>
+    <div class="stat"><div class="stat-v">${bst}</div><div class="stat-l">Melhor streak</div></div>
+    <div class="stat"><div class="stat-v">${corrSem}/3</div><div class="stat-l">Corridas na semana</div></div>
+    <div class="stat"><div class="stat-v">${acaSem}/4</div><div class="stat-l">Academia na semana</div></div>
+  `;
+
+  let html='';
+  chs.forEach((ch,ci)=>{
+    const v=rget(u,`ch_${d}_${ch.id}`);
+    const done=isDone(u,d,ch), fail=isFail(u,d,ch);
+    const cst=chStreak(u,ch,d);
+    let ctrl='';
+    if(ch.type==='yn'){
+      ctrl=`<div class="yn">
+        <button class="yn-b ${done?'ya':''}" onclick="chYN('${ch.id}','S')">Sim</button>
+        <button class="yn-b ${fail?'na':''}" onclick="chYN('${ch.id}','N')">Não</button>
+      </div>`;
+    } else {
+      const num=parseFloat(v||0), disp=num.toFixed(1);
+      ctrl=`<div class="slw">
+        <div class="sl-v" id="sv${ci}">${disp} ${ch.unit}</div>
+        <input type="range" class="${ch.rc}" min="${ch.min}" max="${ch.max}" step="${ch.step}" value="${num}"
+          oninput="chSl('${ch.id}',${ci},this,'${ch.unit}',${ch.goal})">
+      </div>`;
+    }
+    html+=`<div class="ch-card ${done?'done':fail?'fail':''}">
+      <div class="ch-icon">${ch.icon}</div>
+      <div class="ch-title">${ch.title}</div>
+      <div class="ch-streak">${cst}</div><div class="ch-sl">dias seguidos</div>
+      <div class="badge ${done?'ok':fail?'no':'pd'}">${done?'Concluído':fail?'Não feito':'Pendente'}</div>
+      ${ctrl}
+    </div>`;
+  });
+  document.getElementById('ch-grid').innerHTML=html;
+
+  let wb='';
+  weekDays(d).forEach(dd=>{
+    const sc=score(u,dd), tot=chs.length, pct=Math.round((sc/tot)*100);
+    const past=ALL_DAYS.indexOf(dd)<=ti;
+    const isT=dd===TODAY;
+    const fc=pct===100?'var(--g)':pct>0?'rgba(0,229,160,.4)':'rgba(255,107,53,.4)';
+    wb+=`<div class="wkbar-row">
+      <div class="wkbar-lbl" style="${isT?'color:var(--g);font-weight:700':''}">${wdl(dd)} ${dd}</div>
+      <div class="wkbar-bg"><div class="wkbar-fill" style="width:${past?pct:0}%;background:${fc}"></div></div>
+      <div class="wkbar-sc">${past?sc+'/'+tot:'—'}</div>
+    </div>`;
+  });
+  document.getElementById('wkbars').innerHTML=wb;
+}
+
+function chYN(id,val){
+  mySet(`ch_${currentDay}_${id}`,val);
+  toast(val==='S'?'Marcado!':'Registrado');
+}
+function chSl(id,ci,el,unit,goal){
+  const v=parseFloat(el.value).toFixed(1);
+  mySet(`ch_${currentDay}_${id}`,v);
+  document.getElementById('sv'+ci).textContent=v+' '+unit;
+  if(parseFloat(v)>=goal) toast('Meta atingida!');
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER — VERSUS
+// ═══════════════════════════════════════════════════════
+function renderVersus(){
+  const na=getName('a'),nb=getName('b');
+  document.getElementById('vs-sub').textContent=`${na} vs ${nb} — dados em tempo real`;
+  const ti=ALL_DAYS.indexOf(TODAY), elapsed=ti+1;
+
+  const strA=streak('a',TODAY), strB=streak('b',TODAY);
+  const bstA=bestStreak('a'), bstB=bestStreak('b');
+  let pdA=0,pdB=0;
+  for(let i=0;i<=ti;i++){
+    if(score('a',ALL_DAYS[i])===maxScore('a'))pdA++;
+    if(score('b',ALL_DAYS[i])===maxScore('b'))pdB++;
+  }
+  const wk=weekDays(TODAY);
+  const chsA=getChs('a'),chsB=getChs('b');
+  const corrA=wk.filter(d=>isDone('a',d,chsA[2])).length;
+  const corrB=wk.filter(d=>isDone('b',d,chsB[2])).length;
+  const acaA=wk.filter(d=>isDone('a',d,chsA[3])).length;
+  const acaB=wk.filter(d=>isDone('b',d,chsB[3])).length;
+  const passosA=parseFloat(rget('a',`ch_${TODAY}_passos`)||0);
+  const passosB=parseFloat(rget('b',`ch_${TODAY}_passos`)||0);
+  const aguaA=parseFloat(rget('a',`ch_${TODAY}_agua`)||0);
+  const aguaB=parseFloat(rget('b',`ch_${TODAY}_agua`)||0);
+
+  function h2h(lbl,vA,vB,maxV,fA,fB){
+    const pA=maxV>0?Math.min(100,Math.round((vA/maxV)*100)):0;
+    const pB=maxV>0?Math.min(100,Math.round((vB/maxV)*100)):0;
+    const wA=vA>vB,wB=vB>vA;
+    return `<div class="h2h">
+      <div class="h2h-label">${lbl}</div>
+      <div class="h2h-cols">
+        <div class="h2h-side">
+          <div class="h2h-n" style="color:var(--g)">${na}${wA?'<span class="leader">lider</span>':''}</div>
+          <div class="h2h-v" style="color:var(--g)">${fA}</div>
+          <div class="h2h-bar"><div class="h2h-fill-a" style="width:${pA}%;background:var(--g)"></div></div>
+        </div>
+        <div class="h2h-vs">VS</div>
+        <div class="h2h-side right">
+          <div class="h2h-n" style="color:var(--b);justify-content:flex-end">${wB?'<span class="leader">lider</span>':''}${nb}</div>
+          <div class="h2h-v" style="color:var(--b)">${fB}</div>
+          <div class="h2h-bar"><div class="h2h-fill-b" style="width:${pB}%;background:var(--b)"></div></div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('vs-content').innerHTML=
+    h2h('Streak atual (dias perfeitos seguidos)', strA,strB,Math.max(strA,strB,1),strA+' dias',strB+' dias')+
+    h2h('Melhor streak de sempre', bstA,bstB,Math.max(bstA,bstB,1),bstA+' dias',bstB+' dias')+
+    h2h('Dias 100% completos', pdA,pdB,elapsed,pdA+'/'+elapsed,pdB+'/'+elapsed)+
+    h2h('Corridas esta semana', corrA,corrB,3,corrA+'/3',corrB+'/3')+
+    h2h('Academia esta semana', acaA,acaB,4,acaA+'/4',acaB+'/4')+
+    h2h('Passos hoje', passosA,passosB,Math.max(passosA,passosB,10),passosA.toFixed(1)+'k',passosB.toFixed(1)+'k')+
+    h2h('Água hoje', aguaA,aguaB,Math.max(aguaA,aguaB,3),aguaA.toFixed(1)+'L (meta 3L)',aguaB.toFixed(1)+'L (meta 2L)');
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER — TREINO
+// ═══════════════════════════════════════════════════════
+const TR_SECS=[
+  {s:'TREINO GERAL',f:[
+    {k:'realizado',l:'Treino realizado?',t:'yn'},
+    {k:'duracao',  l:'Duração (min)',    t:'txt',ph:'ex: 55'},
+    {k:'energia',  l:'Energia (1–5)',    t:'txt',ph:'1=ruim  5=ótimo'},
+    {k:'obs',      l:'Observações',      t:'ta', ph:'como foi o treino...'},
+  ]},
+  {s:'LOMBAR & CORE',f:[
+    {k:'bird_dog', l:'Bird-dog feito?',  t:'yn'},
+    {k:'prancha',  l:'Prancha (seg)',    t:'txt',ph:'ex: 30'},
+    {k:'dead_bug', l:'Dead bug feito?',  t:'yn'},
+    {k:'dor_lom',  l:'Dor lombar (0–10)',t:'txt',ph:'0=sem dor'},
+  ]},
+  {s:'CORRIDA',f:[
+    {k:'correu',   l:'Corrida feita?',   t:'yn'},
+    {k:'cor_min',  l:'Tempo correndo (min)',t:'txt',ph:'ex: 18'},
+    {k:'cor_km',   l:'Km rodados',       t:'txt',ph:'ex: 2.5'},
+  ]},
+];
+
+function renderTreino(){
+  const d=trDay;
+  document.getElementById('tr-lbl').textContent=`${wdl(d)}, ${d} — ${TR_MAP[wdl(d)]||'Treino'}`;
+  let html='';
+  TR_SECS.forEach(({s,f})=>{
+    html+=`<div class="sec-hdr">${s}</div><div class="sec-body">`;
+    f.forEach(({k,l,t,ph})=>{
+      const v=myGet(`tr_${d}_${k}`,'');
+      let ctrl='';
+      if(t==='yn'){
+        const yes=v==='S',no=v==='N';
+        ctrl=`<div class="yn" style="padding:10px 16px;justify-content:flex-start">
+          <button class="yn-b ${yes?'ya':''}" onclick="setTr('${k}','S')">Sim</button>
+          <button class="yn-b ${no?'na':''}" onclick="setTr('${k}','N')">Não</button>
+        </div>`;
+      } else if(t==='ta'){
+        ctrl=`<textarea rows="2" class="f-ta" placeholder="${ph||''}" onchange="setTr('${k}',this.value)">${v}</textarea>`;
+      } else {
+        ctrl=`<input class="f-inp" type="text" value="${v}" placeholder="${ph||''}" onchange="setTr('${k}',this.value)">`;
+      }
+      html+=`<div class="field-row"><div class="field-lbl">${l}</div><div class="field-ctrl">${ctrl}</div></div>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('tr-form').innerHTML=html;
+}
+function setTr(k,v){mySet(`tr_${trDay}_${k}`,v);renderTreino();}
+
+// ═══════════════════════════════════════════════════════
+// RENDER — CORRIDA
+// ═══════════════════════════════════════════════════════
+const CORS=[
+  {d:'01/04',wd:'Qua',f:'1–2',p:'6x 1min corrida + 2min caminhada'},
+  {d:'02/04',wd:'Qui',f:'1–2',p:'6x 1min corrida + 2min caminhada'},
+  {d:'04/04',wd:'Sáb',f:'1–2',p:'6x 1min corrida + 2min caminhada (longa)'},
+  {d:'08/04',wd:'Qua',f:'1–2',p:'6x 1min corrida + 2min caminhada'},
+  {d:'09/04',wd:'Qui',f:'1–2',p:'6x 1min corrida + 2min caminhada'},
+  {d:'11/04',wd:'Sáb',f:'1–2',p:'6x 1min corrida + 2min caminhada (longa)'},
+  {d:'15/04',wd:'Qua',f:'3–4',p:'4x 3min corrida + 1min caminhada'},
+  {d:'16/04',wd:'Qui',f:'3–4',p:'4x 3min corrida + 1min caminhada'},
+  {d:'18/04',wd:'Sáb',f:'3–4',p:'4x 3min corrida + 1min caminhada (longa)'},
+  {d:'22/04',wd:'Qua',f:'3–4',p:'4x 3min corrida + 1min caminhada'},
+  {d:'23/04',wd:'Qui',f:'3–4',p:'4x 3min corrida + 1min caminhada'},
+  {d:'25/04',wd:'Sáb',f:'3–4',p:'4x 3min corrida + 1min caminhada (longa)'},
+  {d:'29/04',wd:'Qua',f:'5–6',p:'3x 8min corrida + 1min caminhada'},
+  {d:'30/04',wd:'Qui',f:'5–6',p:'3x 8min corrida + 1min caminhada'},
+  {d:'02/05',wd:'Sáb',f:'5–6',p:'3x 8min corrida + 1min caminhada (longa)'},
+  {d:'06/05',wd:'Qua',f:'5–6',p:'3x 8min corrida + 1min caminhada'},
+  {d:'07/05',wd:'Qui',f:'5–6',p:'3x 8min corrida + 1min caminhada'},
+  {d:'09/05',wd:'Sáb',f:'5–6',p:'3x 8min corrida + 1min caminhada (longa)'},
+  {d:'13/05',wd:'Qua',f:'7–8',p:'20–30min corrida contínua'},
+  {d:'14/05',wd:'Qui',f:'7–8',p:'20–30min corrida contínua'},
+  {d:'16/05',wd:'Sáb',f:'7–8',p:'30min corrida contínua (longa)'},
+  {d:'20/05',wd:'Qua',f:'7–8',p:'20–30min corrida contínua'},
+  {d:'21/05',wd:'Qui',f:'7–8',p:'20–30min corrida contínua'},
+  {d:'23/05',wd:'Sáb',f:'7–8',p:'30min corrida contínua (longa)'},
+];
+const FC={'1–2':'f1','3–4':'f2','5–6':'f3','7–8':'f4'};
+const FL={'1–2':'Sem 1–2','3–4':'Sem 3–4','5–6':'Sem 5–6','7–8':'Sem 7–8'};
+
+function renderCorrida(){
+  const u=ME;
+  let km=0,sess=0;
+  CORS.forEach(r=>{const k=parseFloat(rget(u,`cor_${r.d}_km`)||0);if(k>0){km+=k;sess++;}});
+  const done=CORS.filter(r=>rget(u,`cor_${r.d}_ok`)==='S').length;
+  document.getElementById('cor-stats').innerHTML=`
+    <div class="stat"><div class="stat-v">${done}</div><div class="stat-l">Sessões feitas</div></div>
+    <div class="stat"><div class="stat-v">${km.toFixed(1)}</div><div class="stat-l">Km acumulados</div></div>
+    <div class="stat"><div class="stat-v">${Math.round((done/CORS.length)*100)}%</div><div class="stat-l">Completado</div></div>
+    <div class="stat"><div class="stat-v">${done>0?(km/done).toFixed(1):'—'}</div><div class="stat-l">Km médio</div></div>
+  `;
+  let html='';
+  CORS.forEach(r=>{
+    const v=rget(u,`cor_${r.d}_ok`);
+    const yes=v==='S',no=v==='N';
+    html+=`<tr${r.d===TODAY?' class="tr-today"':''}>
+      <td style="font-weight:600">${r.d}</td>
+      <td style="color:var(--t2)">${r.wd}</td>
+      <td><span class="fase-badge ${FC[r.f]}">${FL[r.f]}</span></td>
+      <td style="font-size:12px;color:var(--t2);white-space:normal;min-width:180px">${r.p}</td>
+      <td><div class="yn" style="justify-content:center">
+        <button class="yn-b ${yes?'ya':''}" style="padding:4px 10px;font-size:12px" onclick="setCorOK('${r.d}','S')">S</button>
+        <button class="yn-b ${no?'na':''}" style="padding:4px 10px;font-size:12px" onclick="setCorOK('${r.d}','N')">N</button>
+      </div></td>
+      <td><input class="t-inp" value="${rget(u,'cor_'+r.d+'_min')}" onchange="setCorF('${r.d}','min',this.value)" placeholder="—"></td>
+      <td><input class="t-inp" value="${rget(u,'cor_'+r.d+'_km')}" onchange="setCorF('${r.d}','km',this.value)" placeholder="—"></td>
+      <td><input class="t-inp" value="${rget(u,'cor_'+r.d+'_fc')}" onchange="setCorF('${r.d}','fc',this.value)" placeholder="—"></td>
+      <td><input class="t-inp" value="${rget(u,'cor_'+r.d+'_feel')}" onchange="setCorF('${r.d}','feel',this.value)" placeholder="—" style="width:90px"></td>
+    </tr>`;
+  });
+  document.getElementById('cor-body').innerHTML=html;
+}
+function setCorOK(d,v){mySet(`cor_${d}_ok`,v);renderCorrida();}
+function setCorF(d,k,v){mySet(`cor_${d}_${k}`,v);}
+
+// ═══════════════════════════════════════════════════════
+// RENDER — PESO
+// ═══════════════════════════════════════════════════════
+const PESO_CKS=[
+  {d:'01/04',l:'Início'},{d:'08/04',l:'Sem 1'},{d:'15/04',l:'Sem 2'},{d:'22/04',l:'Sem 3'},
+  {d:'29/04',l:'Sem 4'},{d:'06/05',l:'Sem 5'},{d:'13/05',l:'Sem 6'},{d:'20/05',l:'Sem 7'},
+  {d:'27/05',l:'Sem 8'},{d:'03/06',l:'Sem 9'},{d:'10/06',l:'Sem 10'},{d:'17/06',l:'Sem 11'},{d:'24/06',l:'Sem 12'},
+];
+function renderPeso(){
+  const u=ME;
+  let prev=null,html='';
+  PESO_CKS.forEach(({d,l},i)=>{
+    const def=i===0?(u==='a'?'99':''):'' ;
+    const v=rget(u,`peso_${d}_kg`,def);
+    const vn=parseFloat(v||0);
+    let diff='—',dc='';
+    if(prev!==null&&v!==''){const delta=vn-prev;diff=(delta>0?'+':'')+delta.toFixed(1)+'kg';dc=delta<0?'diff-dn':delta>0?'diff-up':'';}
+    if(v!=='')prev=vn;
+    const pi=(k,def2='')=>`<input class="p-inp" value="${rget(u,'peso_'+d+'_'+k,def2)}" onchange="mySet('peso_${d}_${k}',this.value);renderPeso()" placeholder="—">`;
+    html+=`<tr style="${d===TODAY?'background:rgba(0,229,160,.04)':''}">
+      <td style="font-weight:600;text-align:left;white-space:nowrap">${d}<br><span style="font-size:10px;color:var(--t3);font-weight:400">${l}</span></td>
+      <td><input class="p-inp" value="${v}" onchange="mySet('peso_${d}_kg',this.value);renderPeso()" placeholder="—" style="${i===0?'color:var(--o);font-weight:700':''}"></td>
+      <td>${pi('cin')}</td><td>${pi('quad')}</td><td>${pi('bra')}</td><td>${pi('cox')}</td>
+      <td class="${dc}">${diff}</td>
+      <td>${pi('obs')}</td>
+    </tr>`;
+  });
+  document.getElementById('peso-body').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER — CALENDAR
+// ═══════════════════════════════════════════════════════
+function renderCal(){
+  const u=ME, ti=ALL_DAYS.indexOf(TODAY);
+  const MONTHS=[{n:'Abril 2025',days:ALL_DAYS.slice(0,30)},{n:'Maio 2025',days:ALL_DAYS.slice(30,61)}];
+  let html='';
+  MONTHS.forEach(({n,days})=>{
+    html+=`<div><div class="cal-month-lbl">${n}</div>`;
+    html+=`<div class="cal-wd-row">${WD.map(w=>`<div class="cal-wd">${w}</div>`).join('')}</div>`;
+    html+=`<div class="cal-cells">`;
+    const fw=getWD(days[0]);
+    for(let i=0;i<fw;i++) html+=`<div class="cal-c"></div>`;
+    days.forEach(d=>{
+      const idx=ALL_DAYS.indexOf(d), past=idx<=ti;
+      const sc=score(u,d), ms=maxScore(u);
+      let bg='var(--bor)',fc='var(--t3)';
+      if(past){
+        if(sc===ms){bg='var(--g)';fc='#000';}
+        else if(sc>0){bg='rgba(0,196,132,.25)';fc='var(--g2)';}
+        else{bg='rgba(255,107,53,.2)';fc='var(--o)';}
+      }
+      const isT=d===TODAY;
+      html+=`<div class="cal-c" style="background:${bg};color:${fc};${isT?'outline:2px solid var(--g);outline-offset:1px':''}">
+        <div class="cn">${d.split('/')[0]}</div>
+        <div class="cs">${past?sc+'/'+ms:''}</div>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  });
+  document.getElementById('cal-content').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════════
+// LOGIN / SETUP
+// ═══════════════════════════════════════════════════════
+function getName(u){return rget(u,'name',u==='a'?'Eu':'Esposa');}
+
+function login(u){
+  ME=u; OTHER=u==='a'?'b':'a';
+  const n=getName(u);
+  showScreen('s-app');
+  const av=document.getElementById('tb-av');
+  av.textContent=n[0].toUpperCase();
+  av.style.background=u==='a'?'rgba(0,229,160,.15)':'rgba(77,158,255,.15)';
+  av.style.color=u==='a'?'var(--g)':'var(--b)';
+  document.getElementById('tb-name').textContent=n;
+  setPresence();
+  currentPage='desafio';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('page-desafio').classList.add('on');
+  document.querySelector('.nav-btn').classList.add('on');
+  renderDesafio();
+}
+function goLogin(){ME=null;OTHER=null;showScreen('s-login');}
+function goSetup(){showScreen('s-setup');}
+
+function saveSetup(){
+  const na=document.getElementById('setup-na').value.trim();
+  const nb=document.getElementById('setup-nb').value.trim();
+  const api=document.getElementById('fb-api').value.trim();
+  const auth=document.getElementById('fb-auth').value.trim();
+  const dbUrl=document.getElementById('fb-db').value.trim();
+  const proj=document.getElementById('fb-proj').value.trim();
+  if(!api||!dbUrl){toast('Preencha os dados do Firebase');return;}
+  cfg={apiKey:api,authDomain:auth,dbUrl,projId:proj,nameA:na||'Eu',nameB:nb||'Esposa'};
+  saveCfg();
+  if(initFirebase()){
+    // save names to firebase
+    db.ref('data/a/name').set(na||'Eu');
+    db.ref('data/b/name').set(nb||'Esposa');
+    subscribe();
+    updateLoginCards();
+    showScreen('s-login');
+    toast('Configurado!');
+  } else {
+    toast('Erro ao conectar Firebase. Verifique os dados.');
+  }
+}
+
+function updateLoginCards(){
+  const na=cfg.nameA||'Eu', nb=cfg.nameB||'Esposa';
+  document.getElementById('ln-a').textContent=na;
+  document.getElementById('ln-b').textContent=nb;
+  document.getElementById('av-a').textContent=na[0].toUpperCase();
+  document.getElementById('av-b').textContent=nb[0].toUpperCase();
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+  document.getElementById(id).classList.add('show');
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t=setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+// ═══════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════
+loadCfg();
+if(cfg.apiKey&&cfg.dbUrl){
+  if(initFirebase()){
+    subscribe();
+    updateLoginCards();
+    setTimeout(()=>{showScreen('s-login');},800);
+  } else {
+    showScreen('s-setup');
+  }
+} else {
+  setTimeout(()=>{showScreen('s-setup');},400);
+}
+</script>
+</body>
+</html>
