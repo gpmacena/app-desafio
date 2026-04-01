@@ -1,0 +1,138 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 24% 5%;
+    --foreground: 0 0% 95%;
+
+    --card: 240 19% 8%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 240 19% 8%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 142 100% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 240 14% 11%;
+    --secondary-foreground: 0 0% 85%;
+
+    --muted: 240 14% 14%;
+    --muted-foreground: 240 5% 55%;
+
+    --accent: 240 14% 16%;
+    --accent-foreground: 0 0% 95%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+
+    --border: 240 14% 16%;
+    --input: 240 14% 16%;
+    --ring: 142 100% 50%;
+
+    --radius: 0.75rem;
+
+    --surface-1: 240 19% 8%;
+    --surface-2: 240 14% 11%;
+    --surface-3: 240 14% 14%;
+
+    --sidebar-background: 240 19% 8%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 142 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 240 14% 16%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 240 14% 16%;
+    --sidebar-ring: 142 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  .surface-1 {
+    background-color: hsl(var(--surface-1));
+  }
+  .surface-2 {
+    background-color: hsl(var(--surface-2));
+  }
+  .surface-3 {
+    background-color: hsl(var(--surface-3));
+  }
+}
+
+@layer components {
+  .challenge-card {
+    @apply rounded-xl p-4 transition-all duration-300 ease-out;
+    background-color: hsl(var(--surface-1));
+    border: 1px solid hsl(var(--border));
+  }
+
+  .challenge-card.done {
+    border-color: hsl(var(--success) / 0.4);
+    background-color: hsl(142 76% 36% / 0.08);
+  }
+
+  .challenge-card.failed {
+    border-color: hsl(var(--destructive) / 0.4);
+    background-color: hsl(0 72% 51% / 0.08);
+  }
+
+  .challenge-card.pending {
+    border-color: hsl(var(--border));
+    background-color: hsl(var(--surface-1));
+  }
+
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-50;
+    background-color: hsl(var(--surface-1) / 0.95);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid hsl(var(--border));
+  }
+
+  .stat-card {
+    @apply rounded-lg p-3 text-center;
+    background-color: hsl(var(--surface-2));
+  }
+
+  .bar-fill {
+    @apply rounded-full transition-all duration-500 ease-out;
+  }
+
+  .badge-done {
+    @apply text-xs font-semibold px-2 py-0.5 rounded-full;
+    background-color: hsl(var(--success) / 0.15);
+    color: hsl(var(--success));
+  }
+
+  .badge-failed {
+    @apply text-xs font-semibold px-2 py-0.5 rounded-full;
+    background-color: hsl(var(--destructive) / 0.15);
+    color: hsl(var(--destructive));
+  }
+
+  .badge-pending {
+    @apply text-xs font-semibold px-2 py-0.5 rounded-full;
+    background-color: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+  }
+}
