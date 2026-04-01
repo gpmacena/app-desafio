@@ -144,11 +144,23 @@ export default function Feed() {
 
       if (file && file.type.startsWith('image/')) {
         const path = `feed-media/${Date.now()}_${currentUser.id}`;
-        const snap = await uploadBytes(sRef(storage, path), file);
-        imageUrl = await getDownloadURL(snap.ref);
+        const uploadPromise = uploadBytes(sRef(storage, path), file).then(snap => getDownloadURL(snap.ref));
+        const timeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('STORAGE_TIMEOUT')), 15000)
+        );
+        try {
+          imageUrl = await Promise.race([uploadPromise, timeout]);
+        } catch (uploadErr: any) {
+          if (uploadErr?.message === 'STORAGE_TIMEOUT' || uploadErr?.code?.includes('storage')) {
+            toast.error('Ative o Firebase Storage no console para enviar fotos.', { duration: 4000 });
+            setUploading(false);
+            return;
+          }
+          throw uploadErr;
+        }
       }
 
-      await addFeedPost({
+      addFeedPost({
         userId: currentUser.id,
         msg: msg.trim(),
         tag,
